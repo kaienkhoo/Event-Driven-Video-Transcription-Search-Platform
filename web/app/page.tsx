@@ -18,9 +18,35 @@ export default function Dashboard() {
   const [file, setFile] = useState<File | null>(null);
 
   const handleFetch = async () => {
-    const response = await fetch('/api/upload');
-    const data = await response.json()
-    console.log(data);
+    if (!file) {
+      alert('Please select a file first !');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/upload');
+      const data = await response.json()
+      const uploadUrl = data.uploadUrl;
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          "Content-Type": file.type,
+        }
+      })
+
+      if (uploadResponse.ok) {
+        console.log("SUCCESS! File is securely in AWS S3.");
+        alert("Upload successful!");
+      } else {
+        console.error("Upload failed.");
+      }
+
+    } catch (e) {
+      console.error("Error during upload process:", e);
+    }
+
   };
 
   return (
