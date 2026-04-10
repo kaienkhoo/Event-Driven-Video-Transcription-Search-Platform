@@ -24,8 +24,16 @@ export default function Dashboard() {
     }
 
     try {
-      const response = await fetch('/api/upload');
+      const response = await fetch('/api/upload', {
+        method: "POST",
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+        })
+      });
+
       const data = await response.json()
+
       const uploadUrl = data.uploadUrl;
 
       const uploadResponse = await fetch(uploadUrl, {
