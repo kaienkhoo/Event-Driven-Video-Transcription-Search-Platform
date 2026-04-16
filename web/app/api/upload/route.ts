@@ -41,7 +41,7 @@ export async function POST(request: Request) {
                 s3Key: s3Key,
                 status: 'PROCESSING',
             }
-        })
+        });
 
         const command = new PutObjectCommand({
             Bucket: bucket,
@@ -49,11 +49,22 @@ export async function POST(request: Request) {
             ContentType: fileType,
         });
 
-        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 60 })
+        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 60 });
 
-        return NextResponse.json({ uploadUrl: signedUrl, video: newVideo })
+        return NextResponse.json({ uploadUrl: signedUrl, video: newVideo });
     } catch (e) {
         console.error(e);
-        return NextResponse.json({ error: "Failed to generate URL" }, { status: 500 })
+        return NextResponse.json({ error: "Failed to generate URL" }, { status: 500 });
+    }
+}
+
+export async function GET() {
+    try {
+        const allVideos = await prisma.video.findMany({
+            orderBy: { createdAt: 'desc'}
+        });
+        return NextResponse.json(allVideos);
+    } catch (error) {
+        return NextResponse.json({ error: "Failed to fetch video" }, { status: 500 });
     }
 }

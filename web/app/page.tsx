@@ -1,25 +1,52 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface Video {
-  id: number;
+  id: string;
   title: string;
-  status: 'ready' | 'processing' | 'failed';
-  date: string;
+  status: 'ready' | 'processing' | 'failed' | 'PROCESSING'; // Added PROCESSING to match your backend
+  date?: string;
+  createdAt: string;
 }
 
 export default function Dashboard() {
-  const [videos, setVideos] = useState<Video[]>([
-    { id: 1, title: 'Team Sync - Q3', status: 'ready', date: 'Oct 24, 2026' },
-    { id: 2, title: 'Product Demo Recording', status: 'processing', date: 'Oct 25, 2026' },
-    { id: 3, title: 'Client Onboarding', status: 'failed', date: 'Oct 25, 2026' },
-  ]);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
-  const handleFetch = async () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchVideos = async () => {
+    try {
+      const response = await fetch('/api/upload');
+      const data = await response.json();
+      setVideos(data);
+    } catch (error) {
+      console.error("Failed to fetch videos:", error);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) setFile(droppedFile);
+  };
+
+  const handleUpload = async () => {
     if (!file) {
-      alert('Please select a file first !');
+      alert('Please select a file first!');
       return;
     }
 
@@ -32,97 +59,123 @@ export default function Dashboard() {
         })
       });
 
-      const data = await response.json()
-
+      const data = await response.json();
       const uploadUrl = data.uploadUrl;
 
       const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
         body: file,
-        headers: {
-          "Content-Type": file.type,
-        }
-      })
+        headers: { "Content-Type": file.type }
+      });
 
       if (uploadResponse.ok) {
-        console.log("SUCCESS! File is securely in AWS S3.");
         alert("Upload successful!");
-      } else {
-        console.error("Upload failed.");
+        setFile(null); // Clear selection
+        fetchVideos(); // Refresh the list
       }
-
     } catch (e) {
-      console.error("Error during upload process:", e);
+      console.error("Upload error:", e);
     }
-
   };
 
+  useEffect(() => {
+    fetchVideos();
+  }, []);
+
   return (
-    // <div className="min-h-screen bg-gray-50 p-8 text-slate-800">
-    //   <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 p-8 text-slate-800 font-sans">
+      <div className="max-w-4xl mx-auto space-y-10">
 
-    //     <div>
-    //       <h1 className="text-3xl font-bold tracking-tight text-slate-900">Video Library</h1>
-    //       <p className="text-slate-500 mt-2">Upload and search your video transcripts.</p>
-    //     </div>
+        {/* Header */}
+        <header>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Video Library</h1>
+          <p className="text-lg text-slate-500 mt-2">Manage and search your processed transcripts.</p>
+        </header>
 
-    <>
-      <input
-        type="file"
-        accept='video/*'
-        onChange={(e) => {
-          const selectedFile = e.target.files?.[0] || null;
-          setFile(selectedFile);
-        }} />
-      <button onClick={handleFetch}>Click Me</button>
-    </>
+        {/* Drop Zone & Input */}
+        <section className="space-y-4">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`group relative p-12 border-2 rounded-2xl text-center transition-all cursor-pointer ${isDragging
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-dashed border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50'
+              }`}
+          >
+            {/* Hidden Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="video/*"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
 
-    //     <div className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:bg-slate-100 transition-colors cursor-pointer bg-white">
-    //       <div className="flex flex-col items-center justify-center space-y-4">
-    //         <div className="bg-blue-50 text-blue-600 p-4 rounded-full">
-    //           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-    //           </svg>
-    //         </div>
-    //         <div>
-    //           <p className="font-medium text-slate-700">Click to upload or drag and drop</p>
-    //           <p className="text-sm text-slate-500 mt-1">MP4, WebM or MOV (max. 2GB)</p>
-    //         </div>
-    //       </div>
-    //     </div>
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className={`p-4 rounded-full transition-colors ${isDragging ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500'}`}>
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-slate-700">
+                  {file ? `Selected: ${file.name}` : 'Click to upload or drag and drop'}
+                </p>
+                <p className="text-sm text-slate-400 mt-1">MP4, WebM or MOV (max. 2GB)</p>
+              </div>
+            </div>
+          </div>
 
-    //     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-    //       <div className="divide-y divide-slate-100">
-    //         {videos.map((video) => (
-    //           <div key={video.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-    //             <div className="flex flex-col">
-    //               <span className="font-medium text-slate-800">{video.title}</span>
-    //               <span className="text-sm text-slate-400">{video.date}</span>
-    //             </div>
+          {/* Action Button */}
+          {file && (
+            <button
+              onClick={handleUpload}
+              className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 active:transform active:scale-[0.98] transition-all"
+            >
+              Start Uploading to AWS
+            </button>
+          )}
+        </section>
 
-    //             <div>
-    //               {video.status === 'ready' && (
-    //                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-    //                   Ready to Search
-    //                 </span>
-    //               )}
-    //               {video.status === 'processing' && (
-    //                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 animate-pulse">
-    //                   Processing Transcript...
-    //                 </span>
-    //               )}
-    //               {video.status === 'failed' && (
-    //                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-    //                   Processing Failed
-    //                 </span>
-    //               )}
-    //             </div>
-    //           </div>
-    //         ))}
-    //       </div>
-    //     </div>
+        {/* Video Table */}
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h2 className="font-bold text-slate-700">Recent Uploads</h2>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {videos.length > 0 ? (
+              videos.map((v) => (
+                <div key={v.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-900">{v.title}</span>
+                    <span className="text-xs text-slate-400 uppercase tracking-wider mt-1">
+                      {new Date(v.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
 
-    //   </div>
-    // </div>
+                  <div className="flex items-center space-x-4">
+                    {v.status === 'ready' ? (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                        READY
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 animate-pulse">
+                        {v.status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-10 text-center text-slate-400">
+                No videos found. Upload your first one above!
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }
