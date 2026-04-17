@@ -157,11 +157,11 @@ export default function Dashboard() {
 
                   <div className="flex items-center space-x-4">
                     {v.status === 'ready' ? (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
                         READY
                       </span>
                     ) : (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 animate-pulse">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
                         {v.status}
                       </span>
                     )}
