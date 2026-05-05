@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 interface Video {
   id: string;
   title: string;
-  status: 'ready' | 'processing' | 'failed' | 'PROCESSING'; // Added PROCESSING to match your backend
+  status: 'ready' | 'processing' | 'failed' | 'PROCESSING' | 'READY'; // Added PROCESSING to match your backend
   date?: string;
   createdAt: string;
 }
@@ -13,6 +13,7 @@ interface Video {
 export default function Dashboard() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [file, setFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +83,21 @@ export default function Dashboard() {
     fetchVideos();
   }, []);
 
+  useEffect(() => {
+    const isProcessing = videos.some(v =>
+      v.status.toUpperCase() === 'PROCESSING' || v.status === 'processing'
+    );
+
+    if (isProcessing) {
+      const interval = setInterval(() => {
+        console.log("Checking cloud for transcription updates...");
+        fetchVideos();
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [videos]);
+
   return (
     <div className="min-h-screen bg-slate-50 p-8 text-slate-800 font-sans">
       <div className="max-w-4xl mx-auto space-y-10">
@@ -141,36 +157,56 @@ export default function Dashboard() {
 
         {/* Video Table */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <h2 className="font-bold text-slate-700">Recent Uploads</h2>
+            {videos.some(v => v.status === 'PROCESSING') && (
+              <span className="flex items-center text-xs font-medium text-blue-500 animate-pulse">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                Syncing with Cloud...
+              </span>
+            )}
           </div>
+
           <div className="divide-y divide-slate-100">
-            {videos.length > 0 ? (
+            {loading ? (
+              // 3. SKELETON LOADER
+              [1, 2, 3].map((i) => (
+                <div key={i} className="p-5 flex items-center justify-between animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-4 w-48 bg-slate-200 rounded"></div>
+                    <div className="h-3 w-24 bg-slate-100 rounded"></div>
+                  </div>
+                  <div className="h-6 w-16 bg-slate-200 rounded-full"></div>
+                </div>
+              ))
+            ) : videos.length > 0 ? (
               videos.map((v) => (
                 <div key={v.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
                   <div className="flex flex-col">
                     <span className="font-semibold text-slate-900">{v.title}</span>
-                    <span className="text-xs text-slate-400 uppercase tracking-wider mt-1">
+                    <span className="text-xs text-slate-400 mt-1">
                       {new Date(v.createdAt).toLocaleDateString()}
                     </span>
                   </div>
 
                   <div className="flex items-center space-x-4">
-                    {v.status === 'ready' ? (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                    {v.status === 'READY' || v.status === 'ready' ? (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
                         READY
                       </span>
                     ) : (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                        {v.status}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 animate-pulse">
+                          PROCESSING
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
               ))
             ) : (
-              <div className="p-10 text-center text-slate-400">
-                No videos found. Upload your first one above!
+              <div className="p-10 text-center text-slate-400 italic">
+                Your library is empty. Try uploading a video above.
               </div>
             )}
           </div>
