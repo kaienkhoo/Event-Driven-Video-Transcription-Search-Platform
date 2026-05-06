@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+
+import { Pool } from '@neondatabase/serverless';
+import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from "@/app/generated/prisma/client";
 
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
@@ -12,11 +14,15 @@ if (!accessKeyId || !secretAccessKey || !bucket) {
     throw new Error("AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be defined");
 }
 
-const adapter = new PrismaBetterSqlite3({
-    url: "file:./dev.db",
-})
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+    throw new Error("DATABASE_URL must be defined in your .env file");
+}
 
-const prisma = new PrismaClient({ adapter })
+const pool = new Pool({ connectionString });
+const adapter = new PrismaNeon({ connectionString });
+const prisma = new PrismaClient({ adapter });
+
 
 const s3Client = new S3Client({
     region: "ap-southeast-1",
@@ -61,7 +67,7 @@ export async function POST(request: Request) {
 export async function GET() {
     try {
         const allVideos = await prisma.video.findMany({
-            orderBy: { createdAt: 'desc'}
+            orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(allVideos);
     } catch (error) {

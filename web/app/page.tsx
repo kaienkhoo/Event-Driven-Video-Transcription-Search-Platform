@@ -8,6 +8,7 @@ interface Video {
   status: 'ready' | 'processing' | 'failed' | 'PROCESSING' | 'READY'; // Added PROCESSING to match your backend
   date?: string;
   createdAt: string;
+  transcript?: string;
 }
 
 export default function Dashboard() {
@@ -15,6 +16,7 @@ export default function Dashboard() {
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState<File | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -25,6 +27,8 @@ export default function Dashboard() {
       setVideos(data);
     } catch (error) {
       console.error("Failed to fetch videos:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -181,7 +185,14 @@ export default function Dashboard() {
               ))
             ) : videos.length > 0 ? (
               videos.map((v) => (
-                <div key={v.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                <div
+                  key={v.id}
+                  onClick={() => v.status === 'READY' && setSelectedVideo(v)}
+                  className={`p-5 flex items-center justify-between transition-all ${v.status === 'READY'
+                    ? 'cursor-pointer hover:bg-blue-50 hover:shadow-inner'
+                    : 'cursor-not-allowed opacity-75'
+                    }`}
+                >
                   <div className="flex flex-col">
                     <span className="font-semibold text-slate-900">{v.title}</span>
                     <span className="text-xs text-slate-400 mt-1">
@@ -190,17 +201,12 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex items-center space-x-4">
-                    {v.status === 'READY' || v.status === 'ready' ? (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-                        READY
-                      </span>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 animate-pulse">
-                          PROCESSING
-                        </span>
-                      </div>
-                    )}
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${v.status === 'READY'
+                      ? 'bg-green-100 text-green-700 border-green-200'
+                      : 'bg-amber-100 text-amber-700 border-amber-200 animate-pulse'
+                      }`}>
+                      {v.status}
+                    </span>
                   </div>
                 </div>
               ))
@@ -212,6 +218,51 @@ export default function Dashboard() {
           </div>
         </section>
       </div>
+
+      {/* TRANSCRIPT MODAL */}
+      {selectedVideo && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">{selectedVideo.title}</h2>
+                <p className="text-sm text-slate-500">AI-Generated Transcript</p>
+              </div>
+              <button
+                onClick={() => setSelectedVideo(null)}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto">
+              {selectedVideo.transcript ? (
+                <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  {selectedVideo.transcript}
+                </p>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-slate-400 italic">No transcript found for this video.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t bg-slate-50 rounded-b-3xl flex justify-end">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(selectedVideo.transcript || "");
+                  alert("Copied to clipboard!");
+                }}
+                className="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                Copy Transcript
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

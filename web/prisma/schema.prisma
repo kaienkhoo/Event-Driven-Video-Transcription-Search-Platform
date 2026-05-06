@@ -4,18 +4,19 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../app/generated/prisma"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Video {
   id        String   @id @default(cuid()) 
   title     String   
-  s3Key     String   
+  s3Key     String   @unique
   status    String   @default("PROCESSING") 
+  transcript String?
   createdAt DateTime @default(now()) 
 }
