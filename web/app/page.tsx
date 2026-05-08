@@ -17,6 +17,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -31,6 +32,14 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+  const filteredVideos = videos.filter((v) => {
+    const searchLower = searchTerm.toLowerCase();
+
+    return (
+      v.title.toLowerCase().includes(searchLower) || (v.transcript && v.transcript.toLowerCase().includes(searchLower))
+    );
+  })
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -159,6 +168,21 @@ export default function Dashboard() {
           )}
         </section>
 
+        <div className="relative mb-6">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            placeholder="Search by title or transcript content..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full pl-10 pr-3 py-4 border border-slate-200 rounded-2xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all shadow-sm"
+          />
+        </div>
+
         {/* Video Table */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
@@ -173,7 +197,6 @@ export default function Dashboard() {
 
           <div className="divide-y divide-slate-100">
             {loading ? (
-              // 3. SKELETON LOADER
               [1, 2, 3].map((i) => (
                 <div key={i} className="p-5 flex items-center justify-between animate-pulse">
                   <div className="space-y-2">
@@ -183,8 +206,8 @@ export default function Dashboard() {
                   <div className="h-6 w-16 bg-slate-200 rounded-full"></div>
                 </div>
               ))
-            ) : videos.length > 0 ? (
-              videos.map((v) => (
+            ) : filteredVideos.length > 0 ? (
+              filteredVideos.map((v) => (
                 <div
                   key={v.id}
                   onClick={() => v.status === 'READY' && setSelectedVideo(v)}
