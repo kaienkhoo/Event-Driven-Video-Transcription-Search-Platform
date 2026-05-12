@@ -59,10 +59,19 @@ export default function Dashboard() {
   };
 
   const handleUpload = async () => {
-    if (!file) {
-      alert('Please select a file first!');
-      return;
-    }
+    if (!file) return;
+
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticVideo: Video = {
+      id: tempId,
+      title: file.name,
+      status: 'PROCESSING',
+      createdAt: new Date().toISOString(),
+    };
+
+    setVideos((prev) => [optimisticVideo, ...prev]);
+    setFile(null);
 
     try {
       const response = await fetch('/api/upload', {
@@ -74,21 +83,26 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      const uploadUrl = data.uploadUrl;
 
-      const uploadResponse = await fetch(uploadUrl, {
+
+      setVideos((prev) =>
+        prev.map((v) => v.id === tempId ? data.video : v)
+      );
+
+      const uploadResponse = await fetch(data.uploadUrl, {
         method: 'PUT',
         body: file,
         headers: { "Content-Type": file.type }
       });
 
-      if (uploadResponse.ok) {
-        alert("Upload successful!");
-        setFile(null); // Clear selection
-        fetchVideos(); // Refresh the list
-      }
+      if (!uploadResponse.ok) throw new Error("S3 Upload Failed");
+
+      alert("Upload started successfully!");
+
     } catch (e) {
       console.error("Upload error:", e);
+      setVideos((prev) => prev.filter((v) => v.id !== tempId));
+      alert("Upload failed. Please try again.");
     }
   };
 
