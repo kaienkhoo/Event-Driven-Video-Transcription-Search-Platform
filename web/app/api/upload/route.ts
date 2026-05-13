@@ -36,8 +36,12 @@ const s3Client = new S3Client({
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const fileName = body.fileName || "unknown-video.mp4";
-        const fileType = body.fileType || "video/mp4";
+        const { fileName, fileType } = body;
+
+        const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+        if (!allowedTypes.includes(fileType)) {
+            return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+        }
 
         const s3Key = `upload/${Date.now()}-${fileName.replace(/\s+/g, '-')}`;
 
