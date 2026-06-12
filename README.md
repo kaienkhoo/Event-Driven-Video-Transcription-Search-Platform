@@ -1,10 +1,14 @@
-Event-Driven Video Transcription & Search Platform
+# Event-Driven Video Transcription & Search Platform
 
 A production-grade, cloud-native serverless application that automates video transcription using an event-driven asynchronous pipeline. This architecture handles high-latency AI workloads efficiently without blocking user interactions or freezing the frontend.
 
-System Architecture
+---
+
+## System Architecture
+
 The platform is designed around a decoupled, event-driven pattern ensuring fault tolerance and scalability:
 
+```text
 [ Next.js Frontend ] ➔ Presigned URL ➔ [ Amazon S3 Bucket ]
                                                 │
                                          S3 Object Created
@@ -14,6 +18,11 @@ The platform is designed around a decoupled, event-driven pattern ensuring fault
                                         Whisper-3 Inference
                                                 ▼
                                           [ Groq AI API ]
+```
+
+--- 
+
+## The Ingress Lifecycle
 
 Ingress: The client requests a Presigned URL from the backend API to upload a video asset directly to Amazon S3, optimizing network latency and removing file-size overhead from the web server.
 
@@ -23,7 +32,10 @@ Compute: An AWS Lambda worker processes incoming messages asynchronously, stream
 
 Persistence: The execution status and full transcription text are committed securely via Prisma to a serverless PostgreSQL (Neon) cluster, instantly updating the user interface.
 
-Tech Stack
+---
+
+## Tech Stack
+
 Frontend: Next.js (App Router), React, Tailwind CSS
 
 Backend Runtime: Node.js, TypeScript
@@ -45,8 +57,11 @@ Full-Text Keyword Search: Offers responsive, lightning-fast client-side querying
 
 Serverless Connection Pooling: Implements specialized driver adapters to mitigate connection exhaustion risks typical of dynamic cloud environments.
 
-Project Structure
-Plaintext
+---
+
+## Project Structure
+
+```text
 ├── app/
 │   ├── api/
 │   │   └── upload/
@@ -61,4 +76,5 @@ Plaintext
 │   └── schema.prisma            # Relational database schemas
 ├── package.json
 └── README.md
+```
 
