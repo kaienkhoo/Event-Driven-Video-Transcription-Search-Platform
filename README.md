@@ -20,17 +20,13 @@ The platform is designed around a decoupled, event-driven pattern ensuring fault
                                           [ Groq AI API ]
 ```
 
---- 
+1. **Ingress:** The client requests a Presigned URL from the backend API to upload a video asset directly to Amazon S3, optimizing network latency and removing file-size overhead from the web server.
 
-## The Ingress Lifecycle
+2. **De-coupling:** Once the upload completes, S3 emits an object-created event notification straight to an Amazon SQS queue, acting as a durable message buffer.
 
-Ingress: The client requests a Presigned URL from the backend API to upload a video asset directly to Amazon S3, optimizing network latency and removing file-size overhead from the web server.
+3. **Compute:** An AWS Lambda worker processes incoming messages asynchronously, streaming the audio payload to Groq AI (Whisper-3) for rapid speech-to-text transformation.
 
-De-coupling: Once the upload completes, S3 emits an object-created event notification straight to an Amazon SQS queue, acting as a durable message buffer.
-
-Compute: An AWS Lambda worker processes incoming messages asynchronously, streaming the audio payload to Groq AI (Whisper-3) for rapid speech-to-text transformation.
-
-Persistence: The execution status and full transcription text are committed securely via Prisma to a serverless PostgreSQL (Neon) cluster, instantly updating the user interface.
+4. **Persistence:** The execution status and full transcription text are committed securely via Prisma to a serverless PostgreSQL (Neon) cluster, instantly updating the user interface.
 
 ---
 
