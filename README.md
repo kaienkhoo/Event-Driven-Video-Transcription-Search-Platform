@@ -36,19 +36,22 @@ Persistence: The execution status and full transcription text are committed secu
 
 ## Tech Stack
 
-Frontend: Next.js (App Router), React, Tailwind CSS
+**Frontend:** Next.js (App Router), React, Tailwind CSS
 
-Backend Runtime: Node.js, TypeScript
+**Backend Runtime:** Node.js, TypeScript
 
-ORM: Prisma 7 
+**ORM:** Prisma 7 
 
-Database: PostgreSQL via Neon
+**Database:** PostgreSQL via Neon
 
-Cloud Infrastructure: AWS S3, AWS SQS, AWS Lambda
+**Cloud Infrastructure:** AWS S3, AWS SQS, AWS Lambda
 
-AI Processing Engine: Groq API (OpenAI Whisper-3)
+**AI Processing Engine:** Groq API (OpenAI Whisper-3)
 
-Key Features Implemented
+---
+
+## Key Features Implemented
+
 Optimistic UI Updates: Provides immediate visual response upon asset upload, creating a snappy interface by reconciling client-side temporary state with database records upon server confirmation.
 
 Live Polling Synchronization: Periodically sweeps the remote database for real-time processing indicators, keeping the user interface completely in-sync with underlying cloud workers.
